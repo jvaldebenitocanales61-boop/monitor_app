@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu Oct 23 21:03:20 2025
-
 @author: Javiera
 """
 
 import pandas as pd
+import dash
 from dash import Dash, html, dcc, Input, Output, State
 import plotly.express as px
 from datetime import datetime, timedelta
@@ -27,52 +27,95 @@ else:
 
 # --- Crear app Dash ---
 app = Dash(__name__)
+server = app.server  # NECESARIO PARA RENDER
 app.title = "Monitor PA & SpO₂"
 
 # --- Layout ---
 app.layout = html.Div(style={'backgroundColor': '#f9f9f9', 'fontFamily': 'Arial', 'padding': '20px'}, children=[
-    html.H1("Interfaz monitoreo presión arterial y saturación", style={'textAlign': 'center', 'color': '#555'}),
+
+    html.H1("Interfaz monitoreo presión arterial y saturación",
+            style={'textAlign': 'center', 'color': '#555'}),
 
     # Tarjetas
-    html.Div(style={'display': 'flex', 'justifyContent': 'center', 'gap': '30px', 'marginTop': '20px'}, children=[
-        html.Div(id='tarjeta_sis', style={'backgroundColor': '#a3d5ff', 'padding': '30px', 'borderRadius': '15px',
-                                          'textAlign': 'center', 'width': '220px', 'boxShadow': '3px 3px 15px #ccc'}),
-        html.Div(id='tarjeta_dia', style={'backgroundColor': '#ffd6a3', 'padding': '30px', 'borderRadius': '15px',
-                                          'textAlign': 'center', 'width': '220px', 'boxShadow': '3px 3px 15px #ccc'}),
-        html.Div(id='tarjeta_spo', style={'backgroundColor': '#a3ffb8', 'padding': '30px', 'borderRadius': '15px',
-                                          'textAlign': 'center', 'width': '220px', 'boxShadow': '3px 3px 15px #ccc'}),
+    html.Div(style={
+        'display': 'flex',
+        'justifyContent': 'center',
+        'gap': '30px',
+        'marginTop': '20px',
+        'flexWrap': 'wrap'
+    }, children=[
+        html.Div(id='tarjeta_sis', style={
+            'backgroundColor': '#a3d5ff',
+            'padding': '30px',
+            'borderRadius': '15px',
+            'textAlign': 'center',
+            'width': '220px',
+            'boxShadow': '3px 3px 15px #ccc'
+        }),
+        html.Div(id='tarjeta_dia', style={
+            'backgroundColor': '#ffd6a3',
+            'padding': '30px',
+            'borderRadius': '15px',
+            'textAlign': 'center',
+            'width': '220px',
+            'boxShadow': '3px 3px 15px #ccc'
+        }),
+        html.Div(id='tarjeta_spo', style={
+            'backgroundColor': '#a3ffb8',
+            'padding': '30px',
+            'borderRadius': '15px',
+            'textAlign': 'center',
+            'width': '220px',
+            'boxShadow': '3px 3px 15px #ccc'
+        }),
     ]),
 
     html.Hr(),
 
-    # Entradas y botones
-    html.Div(style={'display': 'flex', 'justifyContent': 'center', 'gap': '15px', 'flexWrap': 'wrap'}, children=[
+    # Entradas + botones
+    html.Div(style={
+        'display': 'flex',
+        'justifyContent': 'center',
+        'gap': '15px',
+        'flexWrap': 'wrap'
+    }, children=[
         html.Div([
             html.Label("Presión Sistólica (mmHg)"),
-            dcc.Input(id='input_sistolica', type='number', placeholder='mmHg', style={'width': '100px'})
+            dcc.Input(id='input_sistolica', type='number', placeholder='mmHg',
+                      style={'width': '100px'})
         ]),
         html.Div([
             html.Label("Presión Diastólica (mmHg)"),
-            dcc.Input(id='input_diastolica', type='number', placeholder='mmHg', style={'width': '100px'})
+            dcc.Input(id='input_diastolica', type='number', placeholder='mmHg',
+                      style={'width': '100px'})
         ]),
         html.Div([
             html.Label("SpO₂ (%)"),
             dcc.Input(id='input_spo2', type='number', placeholder='%', style={'width': '100px'})
         ]),
+
         html.Button("Guardar medición", id='guardar_btn', n_clicks=0,
-                    style={'backgroundColor': '#69b3e7', 'border': 'none', 'padding': '12px 20px',
-                           'borderRadius': '8px', 'color': 'white', 'fontWeight': 'bold', 'cursor': 'pointer'}),
+                    style={'backgroundColor': '#69b3e7', 'border': 'none',
+                           'padding': '12px 20px',
+                           'borderRadius': '8px', 'color': 'white',
+                           'fontWeight': 'bold'}),
+
         html.Button("Borrar historial", id='borrar_btn', n_clicks=0,
-                    style={'backgroundColor': '#e76f51', 'border': 'none', 'padding': '12px 20px',
-                           'borderRadius': '8px', 'color': 'white', 'fontWeight': 'bold', 'cursor': 'pointer'}),
+                    style={'backgroundColor': '#e76f51', 'border': 'none',
+                           'padding': '12px 20px',
+                           'borderRadius': '8px', 'color': 'white',
+                           'fontWeight': 'bold'}),
+
         html.Button("Guardar Excel", id='guardar_excel', n_clicks=0,
-                    style={'backgroundColor': '#2a9d8f', 'border': 'none', 'padding': '12px 20px',
-                           'borderRadius': '8px', 'color': 'white', 'fontWeight': 'bold', 'cursor': 'pointer'})
+                    style={'backgroundColor': '#2a9d8f', 'border': 'none',
+                           'padding': '12px 20px',
+                           'borderRadius': '8px', 'color': 'white',
+                           'fontWeight': 'bold'})
     ]),
 
     html.Hr(),
 
-    # Filtros de tiempo
+    # Filtros
     html.Div(style={'textAlign': 'center', 'marginBottom': '20px'}, children=[
         html.Label("Filtrar por rango de tiempo: "),
         dcc.RadioItems(
@@ -89,7 +132,12 @@ app.layout = html.Div(style={'backgroundColor': '#f9f9f9', 'fontFamily': 'Arial'
     ]),
 
     # Gráficos
-    html.Div(style={'display': 'flex', 'justifyContent': 'space-around', 'marginTop': '20px', 'flexWrap': 'wrap'}, children=[
+    html.Div(style={
+        'display': 'flex',
+        'justifyContent': 'space-around',
+        'marginTop': '20px',
+        'flexWrap': 'wrap'
+    }, children=[
         dcc.Graph(id='grafico_sistolica', style={'width': '30%'}),
         dcc.Graph(id='grafico_diastolica', style={'width': '30%'}),
         dcc.Graph(id='grafico_spo2', style={'width': '30%'})
@@ -97,10 +145,8 @@ app.layout = html.Div(style={'backgroundColor': '#f9f9f9', 'fontFamily': 'Arial'
 
     html.Hr(),
 
-    # Tabla historial
     html.Div(id='tabla_historial', style={'marginTop': '20px'}),
 
-    # Descargar archivo
     dcc.Download(id="descargar_excel")
 ])
 
@@ -123,6 +169,7 @@ app.layout = html.Div(style={'backgroundColor': '#f9f9f9', 'fontFamily': 'Arial'
     State('input_spo2', 'value')
 )
 def actualizar_dashboard(n_guardar, n_borrar, n_excel, filtro, sistolica, diastolica, spo2):
+
     ctx = dash.callback_context
     triggered = ctx.triggered_id if ctx.triggered else None
     descargar = None
@@ -132,29 +179,31 @@ def actualizar_dashboard(n_guardar, n_borrar, n_excel, filtro, sistolica, diasto
     else:
         df = pd.DataFrame(columns=["Fecha", "Sistólica", "Diastólica", "SpO2"])
 
-    # Guardar medición
+    # Guardar
     if triggered == 'guardar_btn' and sistolica and diastolica and spo2:
-        nueva = pd.DataFrame([[datetime.now().strftime("%Y-%m-%d %H:%M:%S"), sistolica, diastolica, spo2]],
+        nueva = pd.DataFrame([[datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                               sistolica, diastolica, spo2]],
                              columns=["Fecha", "Sistólica", "Diastólica", "SpO2"])
         nueva.to_csv(ARCHIVO, mode='a', header=False, index=False)
         df = pd.read_csv(ARCHIVO)
 
-    # Borrar historial
+    # Borrar
     elif triggered == 'borrar_btn':
         df = pd.DataFrame(columns=["Fecha", "Sistólica", "Diastólica", "SpO2"])
         df.to_csv(ARCHIVO, index=False)
 
-    # Guardar Excel
+    # Excel
     elif triggered == 'guardar_excel':
         if not df.empty:
             nombre_excel = "mediciones_guardadas.xlsx"
             df.to_excel(nombre_excel, index=False)
             descargar = dcc.send_file(nombre_excel)
 
-    # Filtrar por tiempo
+    # Filtrar
     if not df.empty:
         df['Fecha'] = pd.to_datetime(df['Fecha'])
         ahora = datetime.now()
+
         if filtro == '1d':
             df = df[df['Fecha'] >= (ahora - timedelta(days=1))]
         elif filtro == '7d':
@@ -164,14 +213,22 @@ def actualizar_dashboard(n_guardar, n_borrar, n_excel, filtro, sistolica, diasto
 
     # Gráficos
     colores = ['#a3d5ff', '#ffd6a3', '#a3ffb8']
-    fig_sis = px.line(df, x="Fecha", y="Sistólica", title="Presión Sistólica (mmHg)", markers=True)
-    fig_dia = px.line(df, x="Fecha", y="Diastólica", title="Presión Diastólica (mmHg)", markers=True)
-    fig_spo = px.line(df, x="Fecha", y="SpO2", title="Saturación de Oxígeno (%)", markers=True)
+
+    fig_sis = px.line(df, x="Fecha", y="Sistólica",
+                      title="Presión Sistólica (mmHg)", markers=True)
+    fig_dia = px.line(df, x="Fecha", y="Diastólica",
+                      title="Presión Diastólica (mmHg)", markers=True)
+    fig_spo = px.line(df, x="Fecha", y="SpO2",
+                      title="Saturación de Oxígeno (%)", markers=True)
 
     for fig, color in zip([fig_sis, fig_dia, fig_spo], colores):
-        fig.update_traces(line=dict(color=color, width=3), marker=dict(size=8, color=color))
-        fig.update_layout(plot_bgcolor='#f9f9f9', paper_bgcolor='#f9f9f9', font_color='#555',
-                          xaxis_title='Fecha', yaxis_title='Valor')
+        fig.update_traces(line=dict(color=color, width=3),
+                          marker=dict(size=8, color=color))
+        fig.update_layout(plot_bgcolor='#f9f9f9',
+                          paper_bgcolor='#f9f9f9',
+                          font_color='#555',
+                          xaxis_title='Fecha',
+                          yaxis_title='Valor')
 
     # Tarjetas
     if not df.empty:
