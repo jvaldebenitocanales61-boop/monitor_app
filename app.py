@@ -250,4 +250,5 @@ def actualizar_dashboard(n_guardar, n_borrar, n_excel, filtro, sistolica, diasto
 
 # --- Ejecutar app ---
 if __name__ == '__main__':
-    app.run_server(host='0.0.0.0', port=10000)
+    app.run(host='0.0.0.0', port=10000)
+
