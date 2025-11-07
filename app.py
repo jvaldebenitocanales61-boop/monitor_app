@@ -28,23 +28,23 @@ app = Dash(__name__)
 app.title = "Monitor PA & SpO₂"
 
 # --- Layout ---
-app.layout = html.Div(style={'backgroundColor': '#f9f9f9', 'fontFamily': 'Arial', 'padding': '20px'}, children=[
-    html.H1("Monitor presión arterial y saturación", style={'textAlign': 'center', 'color': '#555'}),
+app.layout = html.Div(style={'backgroundColor': '#f9f9f9', 'fontFamily': 'Arial', 'padding': '18px'}, children=[
+    html.H1("Monitor presión arterial y saturación", style={'textAlign': 'center', 'color': '#555', 'marginBottom': '12px'}),
 
     # Tarjetas
-    html.Div(style={'display': 'flex', 'justifyContent': 'center', 'gap': '15px', 'flexWrap': 'wrap'}, children=[
-        html.Div(id='tarjeta_sis', style={'backgroundColor': '#a3d5ff', 'padding': '20px', 'borderRadius': '15px',
+    html.Div(style={'display': 'flex', 'justifyContent': 'center', 'gap': '15px', 'flexWrap': 'wrap', 'marginBottom': '10px'}, children=[
+        html.Div(id='tarjeta_sis', style={'backgroundColor': '#a3d5ff', 'padding': '18px', 'borderRadius': '12px',
                                           'textAlign': 'center', 'width': '200px', 'boxShadow': '3px 3px 10px #ccc'}),
-        html.Div(id='tarjeta_dia', style={'backgroundColor': '#ffd6a3', 'padding': '20px', 'borderRadius': '15px',
+        html.Div(id='tarjeta_dia', style={'backgroundColor': '#ffd6a3', 'padding': '18px', 'borderRadius': '12px',
                                           'textAlign': 'center', 'width': '200px', 'boxShadow': '3px 3px 10px #ccc'}),
-        html.Div(id='tarjeta_spo', style={'backgroundColor': '#a3ffb8', 'padding': '20px', 'borderRadius': '15px',
+        html.Div(id='tarjeta_spo', style={'backgroundColor': '#a3ffb8', 'padding': '18px', 'borderRadius': '12px',
                                           'textAlign': 'center', 'width': '200px', 'boxShadow': '3px 3px 10px #ccc'}),
     ]),
 
     html.Hr(),
 
     # Entradas y botones
-    html.Div(style={'display': 'flex', 'justifyContent': 'center', 'gap': '10px', 'flexWrap': 'wrap'}, children=[
+    html.Div(style={'display': 'flex', 'justifyContent': 'center', 'gap': '10px', 'flexWrap': 'wrap', 'marginBottom': '8px'}, children=[
         html.Div([
             html.Label("Sistólica (mmHg)"),
             dcc.Input(id='input_sistolica', type='number', placeholder='mmHg', style={'width': '80px'})
@@ -71,7 +71,7 @@ app.layout = html.Div(style={'backgroundColor': '#f9f9f9', 'fontFamily': 'Arial'
     html.Hr(),
 
     # Filtros de tiempo
-    html.Div(style={'textAlign': 'center', 'marginBottom': '20px'}, children=[
+    html.Div(style={'textAlign': 'center', 'marginBottom': '12px'}, children=[
         html.Label("Filtrar por tiempo: "),
         dcc.RadioItems(
             id='filtro_tiempo',
@@ -86,17 +86,26 @@ app.layout = html.Div(style={'backgroundColor': '#f9f9f9', 'fontFamily': 'Arial'
         )
     ]),
 
-    # Gráficos
-    html.Div(style={'display': 'flex', 'flexWrap': 'wrap', 'justifyContent': 'center', 'gap': '20px'}, children=[
-        dcc.Graph(id='grafico_sistolica', style={'flex': '1 1 300px', 'minWidth': '280px', 'height': '300px'}),
-        dcc.Graph(id='grafico_diastolica', style={'flex': '1 1 300px', 'minWidth': '280px', 'height': '300px'}),
-        dcc.Graph(id='grafico_spo2', style={'flex': '1 1 300px', 'minWidth': '280px', 'height': '300px'})
+    # Gráficos (cada uno en su propio contenedor con separación)
+    html.Div(style={'display': 'flex', 'flexDirection': 'column', 'alignItems': 'center', 'gap': '0px'}, children=[
+
+        html.Div([
+            dcc.Graph(id='grafico_sistolica', style={'width': '100%', 'maxWidth': '900px', 'height': '340px'})
+        ], style={'width': '100%', 'display': 'flex', 'justifyContent': 'center', 'marginTop': '12px', 'marginBottom': '28px'}),
+
+        html.Div([
+            dcc.Graph(id='grafico_diastolica', style={'width': '100%', 'maxWidth': '900px', 'height': '340px'})
+        ], style={'width': '100%', 'display': 'flex', 'justifyContent': 'center', 'marginTop': '0px', 'marginBottom': '28px'}),
+
+        html.Div([
+            dcc.Graph(id='grafico_spo2', style={'width': '100%', 'maxWidth': '900px', 'height': '340px'})
+        ], style={'width': '100%', 'display': 'flex', 'justifyContent': 'center', 'marginTop': '0px', 'marginBottom': '28px'}),
     ]),
 
     html.Hr(),
 
     # Tabla historial
-    html.Div(id='tabla_historial', style={'marginTop': '20px'}),
+    html.Div(id='tabla_historial', style={'marginTop': '8px', 'overflowX': 'auto'}),
 
     # Descargar archivo
     dcc.Download(id="descargar_excel")
@@ -163,7 +172,7 @@ def actualizar_dashboard(n_guardar, n_borrar, n_excel, filtro, sistolica, diasto
     for fig, color in zip([fig_sis, fig_dia, fig_spo], colores):
         fig.update_traces(line=dict(color=color, width=3), marker=dict(size=8, color=color))
         fig.update_layout(plot_bgcolor='#f9f9f9', paper_bgcolor='#f9f9f9', font_color='#555',
-                          xaxis_title='Fecha', yaxis_title='Valor', margin=dict(l=20,r=20,t=30,b=30))
+                          xaxis_title='Fecha', yaxis_title='Valor', margin=dict(l=20, r=20, t=30, b=30))
 
     # Tarjetas
     if not df.empty:
