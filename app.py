@@ -5,7 +5,7 @@ Created on Thu Oct 23 21:03:20 2025
 """
 
 import pandas as pd
-from dash import Dash, html, dcc, Input, Output, State
+from dash import Dash, html, dcc, Input, Output, State, callback_context
 import plotly.express as px
 from datetime import datetime, timedelta
 import os
@@ -16,8 +16,7 @@ ARCHIVO = "mediciones.csv"
 if os.path.exists(ARCHIVO):
     df = pd.read_csv(ARCHIVO)
     if not df.empty:
-        df = df[['Fecha', 'Sistólica', 'Diastólica', 'SpO2']]
-        df = df.dropna()
+        df = df[['Fecha', 'Sistólica', 'Diastólica', 'SpO2']].dropna()
         df = df[(df['Sistólica'] != 0) & (df['Diastólica'] != 0) & (df['SpO2'] != 0)]
         df.to_csv(ARCHIVO, index=False)
 else:
@@ -28,56 +27,44 @@ else:
 app = Dash(__name__)
 app.title = "Monitor PA & SpO₂"
 
-# --- Layout responsivo ---
+# --- Layout ---
 app.layout = html.Div(style={'backgroundColor': '#f9f9f9', 'fontFamily': 'Arial', 'padding': '20px'}, children=[
-
-    html.H1("Interfaz monitoreo presión arterial y saturación", style={'textAlign': 'center', 'color': '#555'}),
+    html.H1("Monitor presión arterial y saturación", style={'textAlign': 'center', 'color': '#555'}),
 
     # Tarjetas
-    html.Div(style={
-        'display': 'flex', 
-        'flexWrap': 'wrap', 
-        'justifyContent': 'center', 
-        'gap': '15px'
-    }, children=[
-        html.Div(id='tarjeta_sis', style={
-            'backgroundColor': '#a3d5ff', 'padding': '20px', 'borderRadius': '15px',
-            'textAlign': 'center', 'flex': '1 1 180px', 'minWidth': '150px', 'boxShadow': '3px 3px 15px #ccc'
-        }),
-        html.Div(id='tarjeta_dia', style={
-            'backgroundColor': '#ffd6a3', 'padding': '20px', 'borderRadius': '15px',
-            'textAlign': 'center', 'flex': '1 1 180px', 'minWidth': '150px', 'boxShadow': '3px 3px 15px #ccc'
-        }),
-        html.Div(id='tarjeta_spo', style={
-            'backgroundColor': '#a3ffb8', 'padding': '20px', 'borderRadius': '15px',
-            'textAlign': 'center', 'flex': '1 1 180px', 'minWidth': '150px', 'boxShadow': '3px 3px 15px #ccc'
-        }),
+    html.Div(style={'display': 'flex', 'justifyContent': 'center', 'gap': '15px', 'flexWrap': 'wrap'}, children=[
+        html.Div(id='tarjeta_sis', style={'backgroundColor': '#a3d5ff', 'padding': '20px', 'borderRadius': '15px',
+                                          'textAlign': 'center', 'width': '200px', 'boxShadow': '3px 3px 10px #ccc'}),
+        html.Div(id='tarjeta_dia', style={'backgroundColor': '#ffd6a3', 'padding': '20px', 'borderRadius': '15px',
+                                          'textAlign': 'center', 'width': '200px', 'boxShadow': '3px 3px 10px #ccc'}),
+        html.Div(id='tarjeta_spo', style={'backgroundColor': '#a3ffb8', 'padding': '20px', 'borderRadius': '15px',
+                                          'textAlign': 'center', 'width': '200px', 'boxShadow': '3px 3px 10px #ccc'}),
     ]),
 
     html.Hr(),
 
     # Entradas y botones
-    html.Div(style={'display': 'flex', 'flexWrap': 'wrap', 'justifyContent': 'center', 'gap': '15px'}, children=[
+    html.Div(style={'display': 'flex', 'justifyContent': 'center', 'gap': '10px', 'flexWrap': 'wrap'}, children=[
         html.Div([
-            html.Label("Presión Sistólica (mmHg)"),
-            dcc.Input(id='input_sistolica', type='number', placeholder='mmHg', style={'width': '100px'})
+            html.Label("Sistólica (mmHg)"),
+            dcc.Input(id='input_sistolica', type='number', placeholder='mmHg', style={'width': '80px'})
         ]),
         html.Div([
-            html.Label("Presión Diastólica (mmHg)"),
-            dcc.Input(id='input_diastolica', type='number', placeholder='mmHg', style={'width': '100px'})
+            html.Label("Diastólica (mmHg)"),
+            dcc.Input(id='input_diastolica', type='number', placeholder='mmHg', style={'width': '80px'})
         ]),
         html.Div([
             html.Label("SpO₂ (%)"),
-            dcc.Input(id='input_spo2', type='number', placeholder='%', style={'width': '100px'})
+            dcc.Input(id='input_spo2', type='number', placeholder='%', style={'width': '80px'})
         ]),
-        html.Button("Guardar medición", id='guardar_btn', n_clicks=0,
-                    style={'backgroundColor': '#69b3e7', 'border': 'none', 'padding': '12px 20px',
+        html.Button("Guardar", id='guardar_btn', n_clicks=0,
+                    style={'backgroundColor': '#69b3e7', 'border': 'none', 'padding': '10px 15px',
                            'borderRadius': '8px', 'color': 'white', 'fontWeight': 'bold', 'cursor': 'pointer'}),
         html.Button("Borrar historial", id='borrar_btn', n_clicks=0,
-                    style={'backgroundColor': '#e76f51', 'border': 'none', 'padding': '12px 20px',
+                    style={'backgroundColor': '#e76f51', 'border': 'none', 'padding': '10px 15px',
                            'borderRadius': '8px', 'color': 'white', 'fontWeight': 'bold', 'cursor': 'pointer'}),
         html.Button("Guardar Excel", id='guardar_excel', n_clicks=0,
-                    style={'backgroundColor': '#2a9d8f', 'border': 'none', 'padding': '12px 20px',
+                    style={'backgroundColor': '#2a9d8f', 'border': 'none', 'padding': '10px 15px',
                            'borderRadius': '8px', 'color': 'white', 'fontWeight': 'bold', 'cursor': 'pointer'})
     ]),
 
@@ -85,7 +72,7 @@ app.layout = html.Div(style={'backgroundColor': '#f9f9f9', 'fontFamily': 'Arial'
 
     # Filtros de tiempo
     html.Div(style={'textAlign': 'center', 'marginBottom': '20px'}, children=[
-        html.Label("Filtrar por rango de tiempo: "),
+        html.Label("Filtrar por tiempo: "),
         dcc.RadioItems(
             id='filtro_tiempo',
             options=[
@@ -99,16 +86,11 @@ app.layout = html.Div(style={'backgroundColor': '#f9f9f9', 'fontFamily': 'Arial'
         )
     ]),
 
-    # Gráficos responsivos
-    html.Div(style={
-        'display': 'flex',
-        'flexWrap': 'wrap',
-        'justifyContent': 'center',
-        'gap': '20px'
-    }, children=[
-        dcc.Graph(id='grafico_sistolica', style={'flex': '1 1 300px', 'minWidth': '300px', 'height': '350px'}),
-        dcc.Graph(id='grafico_diastolica', style={'flex': '1 1 300px', 'minWidth': '300px', 'height': '350px'}),
-        dcc.Graph(id='grafico_spo2', style={'flex': '1 1 300px', 'minWidth': '300px', 'height': '350px'})
+    # Gráficos
+    html.Div(style={'display': 'flex', 'flexWrap': 'wrap', 'justifyContent': 'center', 'gap': '20px'}, children=[
+        dcc.Graph(id='grafico_sistolica', style={'flex': '1 1 300px', 'minWidth': '280px', 'height': '300px'}),
+        dcc.Graph(id='grafico_diastolica', style={'flex': '1 1 300px', 'minWidth': '280px', 'height': '300px'}),
+        dcc.Graph(id='grafico_spo2', style={'flex': '1 1 300px', 'minWidth': '280px', 'height': '300px'})
     ]),
 
     html.Hr(),
@@ -120,7 +102,7 @@ app.layout = html.Div(style={'backgroundColor': '#f9f9f9', 'fontFamily': 'Arial'
     dcc.Download(id="descargar_excel")
 ])
 
-# --- Callbacks ---
+# --- Callback para gráficos y botones ---
 @app.callback(
     Output('grafico_sistolica', 'figure'),
     Output('grafico_diastolica', 'figure'),
@@ -139,33 +121,27 @@ app.layout = html.Div(style={'backgroundColor': '#f9f9f9', 'fontFamily': 'Arial'
     State('input_spo2', 'value')
 )
 def actualizar_dashboard(n_guardar, n_borrar, n_excel, filtro, sistolica, diastolica, spo2):
-    ctx = dash.callback_context
-    triggered = ctx.triggered_id if ctx.triggered else None
+    triggered = [t['prop_id'].split('.')[0] for t in callback_context.triggered]
     descargar = None
 
-    if os.path.exists(ARCHIVO):
-        df = pd.read_csv(ARCHIVO)
-    else:
-        df = pd.DataFrame(columns=["Fecha", "Sistólica", "Diastólica", "SpO2"])
+    # Leer archivo
+    df = pd.read_csv(ARCHIVO) if os.path.exists(ARCHIVO) else pd.DataFrame(columns=["Fecha","Sistólica","Diastólica","SpO2"])
 
     # Guardar medición
-    if triggered == 'guardar_btn' and sistolica and diastolica and spo2:
+    if 'guardar_btn' in triggered and sistolica and diastolica and spo2:
         nueva = pd.DataFrame([[datetime.now().strftime("%Y-%m-%d %H:%M:%S"), sistolica, diastolica, spo2]],
-                             columns=["Fecha", "Sistólica", "Diastólica", "SpO2"])
+                             columns=["Fecha","Sistólica","Diastólica","SpO2"])
         nueva.to_csv(ARCHIVO, mode='a', header=False, index=False)
         df = pd.read_csv(ARCHIVO)
 
     # Borrar historial
-    elif triggered == 'borrar_btn':
-        df = pd.DataFrame(columns=["Fecha", "Sistólica", "Diastólica", "SpO2"])
+    elif 'borrar_btn' in triggered:
+        df = pd.DataFrame(columns=["Fecha","Sistólica","Diastólica","SpO2"])
         df.to_csv(ARCHIVO, index=False)
 
     # Guardar Excel
-    elif triggered == 'guardar_excel':
-        if not df.empty:
-            nombre_excel = "mediciones_guardadas.xlsx"
-            df.to_excel(nombre_excel, index=False)
-            descargar = dcc.send_file(nombre_excel)
+    elif 'guardar_excel' in triggered and not df.empty:
+        descargar = dcc.send_data_frame(df.to_excel, "mediciones.xlsx", index=False)
 
     # Filtrar por tiempo
     if not df.empty:
@@ -182,12 +158,12 @@ def actualizar_dashboard(n_guardar, n_borrar, n_excel, filtro, sistolica, diasto
     colores = ['#a3d5ff', '#ffd6a3', '#a3ffb8']
     fig_sis = px.line(df, x="Fecha", y="Sistólica", title="Presión Sistólica (mmHg)", markers=True)
     fig_dia = px.line(df, x="Fecha", y="Diastólica", title="Presión Diastólica (mmHg)", markers=True)
-    fig_spo = px.line(df, x="Fecha", y="SpO2", title="Saturación de Oxígeno (%)", markers=True)
+    fig_spo = px.line(df, x="Fecha", y="SpO2", title="SpO₂ (%)", markers=True)
 
     for fig, color in zip([fig_sis, fig_dia, fig_spo], colores):
         fig.update_traces(line=dict(color=color, width=3), marker=dict(size=8, color=color))
         fig.update_layout(plot_bgcolor='#f9f9f9', paper_bgcolor='#f9f9f9', font_color='#555',
-                          xaxis_title='Fecha', yaxis_title='Valor')
+                          xaxis_title='Fecha', yaxis_title='Valor', margin=dict(l=20,r=20,t=30,b=30))
 
     # Tarjetas
     if not df.empty:
@@ -208,6 +184,6 @@ def actualizar_dashboard(n_guardar, n_borrar, n_excel, filtro, sistolica, diasto
 
 # --- Ejecutar app ---
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=10000)
-
-
+    # Para Render: usar app.run con host y puerto
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port)
